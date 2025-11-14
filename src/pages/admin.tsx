@@ -80,6 +80,8 @@ import {
   ArchiveIcon,
   Settings,
   Loader,
+  RefreshCwIcon,
+  PlaySquare,
 } from "lucide-react";
 import { format, set } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -262,6 +264,7 @@ function AdminDashboard() {
   const [pastorsLoading, setPastorsLoading] = useState(true);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -1561,6 +1564,23 @@ function AdminDashboard() {
                     <Calendar className="mr-2 h-5 w-5" />
                     Events Management{" "}
                     {allEvents.length > 0 && `(${allEvents.length})`}
+                    <Badge
+                      onClick={async () => {
+                        setRefreshing(true);
+                        setEventsLoading(true);
+                        await getEvents();
+                        setEventsLoading(false);
+                        setRefreshing(false);
+                      }}
+                      className="ml-2 cursor-pointer hover:bg-accent hover:text-primary"
+                    >
+                      Refresh
+                      <RefreshCwIcon
+                        className={`${
+                          refreshing && "animate-spin"
+                        } size-3 ml-2`}
+                      />
+                    </Badge>
                   </CardTitle>
                   <Dialog
                     open={showEventDialog}
@@ -1910,8 +1930,25 @@ function AdminDashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center">
-                    <Eye className="mr-2 h-5 w-5" />
+                    <PlaySquare className="mr-2 h-5 w-5" />
                     Sermons Management
+                    <Badge
+                      onClick={async () => {
+                        setRefreshing(true);
+                        setSermonsLoading(true);
+                        await getSermons();
+                        setSermonsLoading(false);
+                        setRefreshing(false);
+                      }}
+                      className="ml-2 cursor-pointer hover:bg-accent hover:text-primary"
+                    >
+                      Refresh
+                      <RefreshCwIcon
+                        className={`${
+                          refreshing && "animate-spin"
+                        } size-3 ml-2`}
+                      />
+                    </Badge>
                   </CardTitle>
                   <Dialog
                     open={showSermonDialog}
@@ -2284,6 +2321,23 @@ function AdminDashboard() {
                       <CardTitle className="flex items-center">
                         <Users className="mr-2 h-5 w-5" />
                         User Management
+                        <Badge
+                          onClick={async () => {
+                            setRefreshing(true);
+                            setUsersLoading(true);
+                            await getSubscribers();
+                            setUsersLoading(false);
+                            setRefreshing(false);
+                          }}
+                          className="ml-2 cursor-pointer hover:bg-accent hover:text-primary"
+                        >
+                          Refresh
+                          <RefreshCwIcon
+                            className={`${
+                              refreshing && "animate-spin"
+                            } size-3 ml-2`}
+                          />
+                        </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -2705,6 +2759,23 @@ function AdminDashboard() {
                   <CardTitle className="flex items-center">
                     <Image className="mr-2 h-5 w-5" />
                     Gallery Management
+                    <Badge
+                      onClick={async () => {
+                        setRefreshing(true);
+                        setGalleryLoading(true);
+                        await getGalleryImages();
+                        setGalleryLoading(false);
+                        setRefreshing(false);
+                      }}
+                      className="ml-2 cursor-pointer hover:bg-accent hover:text-primary"
+                    >
+                      Refresh
+                      <RefreshCwIcon
+                        className={`${
+                          refreshing && "animate-spin"
+                        } size-3 ml-2`}
+                      />
+                    </Badge>
                   </CardTitle>
                   <Dialog
                     open={showGalleryDialog}
@@ -2903,6 +2974,23 @@ function AdminDashboard() {
                   <CardTitle className="flex items-center">
                     <Users className="mr-2 h-5 w-5" />
                     Pastors Management
+                    <Badge
+                      onClick={async () => {
+                        setRefreshing(true);
+                        setPastorsLoading(true);
+                        await getPastors();
+                        setPastorsLoading(false);
+                        setRefreshing(false);
+                      }}
+                      className="ml-2 cursor-pointer hover:bg-accent hover:text-primary"
+                    >
+                      Refresh
+                      <RefreshCwIcon
+                        className={`${
+                          refreshing && "animate-spin"
+                        } size-3 ml-2`}
+                      />
+                    </Badge>
                   </CardTitle>
                   <Dialog
                     open={showPastorDialog}
@@ -3147,6 +3235,23 @@ function AdminDashboard() {
                   <CardTitle className="flex items-center">
                     <Bell className="mr-2 h-5 w-5" />
                     Notifications
+                    <Badge
+                      onClick={async () => {
+                        setRefreshing(true);
+
+                        await getNotifications();
+
+                        setRefreshing(false);
+                      }}
+                      className="ml-2 cursor-pointer hover:bg-accent hover:text-primary"
+                    >
+                      Refresh
+                      <RefreshCwIcon
+                        className={`${
+                          refreshing && "animate-spin"
+                        } size-3 ml-2`}
+                      />
+                    </Badge>
                   </CardTitle>
                   <div className="flex gap-2">
                     {notifications.filter((n) => n.archived).length > 0 && (

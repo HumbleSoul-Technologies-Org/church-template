@@ -141,7 +141,7 @@ export default function Navigation() {
             {isAuthenticated && (
               <span
                 onClick={logout}
-                className="flex justify-center cursor-pointer items-center text-white flex-1 "
+                className="flex justify-center hover:bg-accent p-2 hover:text-primary rounded-md cursor-pointer items-center text-white flex-1 "
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -208,7 +208,7 @@ export default function Navigation() {
                 {isAuthenticated && (
                   <Button
                     variant="ghost"
-                    className="w-full"
+                    className="w-full hover:bg-red-600/10"
                     onClick={() => {
                       logout();
                       setIsOpen(false);
