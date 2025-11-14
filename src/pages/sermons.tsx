@@ -827,9 +827,7 @@ export default function Sermons() {
             id="sermon-grid"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0"
           >
-            {fetchedLoading ||
-            fetchedFetching ||
-            (searchQuery && searchLoading) ? (
+            {fetchedLoading || (searchQuery && searchLoading) ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="overflow-hidden">
                   <Skeleton className="w-full aspect-video" />
