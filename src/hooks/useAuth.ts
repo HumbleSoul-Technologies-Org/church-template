@@ -116,8 +116,8 @@ export function useAuthProvider(): AuthContextType {
   
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    const key = import.meta.env.VITE_EKISUMULUZO
-    if (username === 'admin' && password === key ) {
+    const key = import.meta.env.VITE_EKISUMULUZO || '';
+    if (username === 'admin' && password === key) {
       const adminUser: User = {
         id: '1',
         username: 'admin',

@@ -88,8 +88,9 @@ import { useAuth } from "../hooks/useAuth";
 import LoginForm from "../components/login-form";
 import axios from "axios";
 import { Configs } from "../lib/utils";
-import { log } from "console";
-import { get } from "http";
+import { useSermons } from "../hooks/useSermons";
+import { useEvents } from "../hooks/useEvents";
+
 // Define types locally since shared/schema is removed
 export type Event = {
   _id: string;
@@ -174,7 +175,7 @@ export type User = {
   banned?: boolean;
   createdAt?: string | null;
   imageUrl?: string;
-  contact?:string
+  contact?: string;
 };
 
 const mockNewsletters: Newsletter[] = [
@@ -239,6 +240,8 @@ function AdminDashboard() {
   if (!isAuthenticated || !isAdmin) {
     return <LoginForm />;
   }
+  const { data: allSermons = [] } = useSermons();
+  const { data: allEvents = [], isLoading: hookLoading, refetch } = useEvents();
 
   const { toast } = useToast();
 
@@ -254,7 +257,6 @@ function AdminDashboard() {
 
   const [eventsLoading, setEventsLoading] = useState(true);
   const [sermonsLoading, setSermonsLoading] = useState(true);
-  const [newslettersLoading, setNewslettersLoading] = useState(true);
   const [donationsLoading, setDonationsLoading] = useState(true);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [pastorsLoading, setPastorsLoading] = useState(true);
@@ -272,7 +274,6 @@ function AdminDashboard() {
     const timer = setTimeout(() => {
       setEventsLoading(false);
       setSermonsLoading(false);
-      setNewslettersLoading(false);
       setDonationsLoading(false);
       setGalleryLoading(false);
       setPastorsLoading(false);
@@ -1283,9 +1284,9 @@ function AdminDashboard() {
             s.email?.split("@")?.[0] ||
             `User ${i}`,
           email: s.email || "",
-          contact:s.contact,
+          contact: s.contact,
           profileImage: s.profileImage || s.pr || s.avatarUrl || "",
-           
+
           createdAt: s.createdAt || s.createdAt || null,
           banned: !!s.banned,
         }));
@@ -1419,6 +1420,51 @@ function AdminDashboard() {
     galleryForm.reset();
   };
 
+  // Add this helper function before the AdminDashboard component
+  const getEventStatus = (
+    eventDate: string
+  ): "upcoming" | "ongoing" | "past" => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const event = new Date(eventDate);
+    event.setHours(0, 0, 0, 0);
+
+    if (event < today) {
+      return "past";
+    } else if (event.getTime() === today.getTime()) {
+      return "ongoing";
+    } else {
+      return "upcoming";
+    }
+  };
+
+  const getStatusBadgeVariant = (status: "upcoming" | "ongoing" | "past") => {
+    switch (status) {
+      case "upcoming":
+        return "secondary";
+      case "ongoing":
+        return "default";
+      case "past":
+        return "outline";
+      default:
+        return "outline";
+    }
+  };
+
+  const getStatusLabel = (status: "upcoming" | "ongoing" | "past") => {
+    switch (status) {
+      case "upcoming":
+        return "Upcoming";
+      case "ongoing":
+        return "Ongoing";
+      case "past":
+        return "Past";
+      default:
+        return "Unknown";
+    }
+  };
+
   useEffect(() => {
     getNotifications();
     getEvents();
@@ -1437,7 +1483,7 @@ function AdminDashboard() {
     <div className="min-h-screen ">
       {/* Header */}
       <section className="py-12 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+        <div className="container mt-4 mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <h1 className="text-4xl font-bold" data-testid="admin-title">
             Admin Dashboard
           </h1>
@@ -1451,12 +1497,17 @@ function AdminDashboard() {
       <section className="py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-9 mb-8">
+            <TabsList className="grid w-full justify-evenly grid-cols-9 mb-8">
               <TabsTrigger value="events" data-testid="tab-events">
-                Events
+                Events{" "}
+                {allEvents.length > 0 &&
+                  `(${
+                    allEvents.filter((e: any) => new Date(e.date) >= new Date())
+                      .length
+                  })`}
               </TabsTrigger>
               <TabsTrigger value="sermons" data-testid="tab-sermons">
-                Sermons
+                Sermons {allSermons.length > 0 && `(${allSermons.length})`}
               </TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users">
                 Users
@@ -1493,18 +1544,23 @@ function AdminDashboard() {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="settings" data-testid="tab-settings">
+              <TabsTrigger
+                className="hidden"
+                value="settings"
+                data-testid="tab-settings"
+              >
                 Settings
               </TabsTrigger>
             </TabsList>
 
             {/* Events Tab */}
             <TabsContent value="events">
-              <Card>
+              <Card className="max-h-[500px] ">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center">
                     <Calendar className="mr-2 h-5 w-5" />
-                    Events Management
+                    Events Management{" "}
+                    {allEvents.length > 0 && `(${allEvents.length})`}
                   </CardTitle>
                   <Dialog
                     open={showEventDialog}
@@ -1701,14 +1757,16 @@ function AdminDashboard() {
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
-                <CardContent>
+                <CardContent className=" max-h-[400px] overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Thumbnail</TableHead>
                         <TableHead>Title</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Location</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1731,84 +1789,112 @@ function AdminDashboard() {
                             <TableCell>
                               <Skeleton className="h-4 w-20" />
                             </TableCell>
+                            <TableCell>
+                              <Skeleton className="h-4 w-20" />
+                            </TableCell>
                           </TableRow>
                         ))
                       ) : events && events.length > 0 ? (
-                        events.map((event) => (
-                          <TableRow
-                            key={event._id}
-                            data-testid={`event-row-${event._id}`}
-                          >
-                            <TableCell className="font-medium">
-                              {event.title}
-                            </TableCell>
-                            <TableCell>
-                              {format(new Date(event.date), "MMM d, yyyy")}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{event.category}</Badge>
-                            </TableCell>
-                            <TableCell>{event.location}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditEvent(event)}
-                                  data-testid={`button-edit-event-${event._id}`}
+                        events.map((event) => {
+                          const eventStatus = getEventStatus(event.date);
+                          return (
+                            <TableRow
+                              key={event._id}
+                              data-testid={`event-row-${event._id}`}
+                            >
+                              <TableCell className="font-medium">
+                                <div className="relative h-12 w-12 rounded-md overflow-hidden">
+                                  <img
+                                    src={
+                                      event.thumbnail?.url ||
+                                      event.thumbnailUrl ||
+                                      "https://via.placeholder.com/48?text=No+Image"
+                                    }
+                                    alt={event.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {event.title}
+                              </TableCell>
+                              <TableCell>
+                                {format(new Date(event.date), "MMM d, yyyy")}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {event.category}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{event.location}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={getStatusBadgeVariant(eventStatus)}
                                 >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      className=""
-                                      variant="destructive"
-                                      data-testid={`button-delete-event-${event._id}`}
-                                    >
-                                      {deleteLoading === event._id ? (
-                                        <Loader
-                                          size={20}
-                                          color="white"
-                                          className="animate-spin"
-                                        />
-                                      ) : (
-                                        <Trash2 className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>
-                                        Delete Event
-                                      </AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete "
-                                        {event.title}"? This action cannot be
-                                        undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>
-                                        Cancel
-                                      </AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => deleteEvent(event._id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  {getStatusLabel(eventStatus)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditEvent(event)}
+                                    data-testid={`button-edit-event-${event._id}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className=""
+                                        variant="destructive"
+                                        data-testid={`button-delete-event-${event._id}`}
                                       >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                                        {deleteLoading === event._id ? (
+                                          <Loader
+                                            size={20}
+                                            color="white"
+                                            className="animate-spin"
+                                          />
+                                        ) : (
+                                          <Trash2 className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          Delete Event
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete "
+                                          {event.title}"? This action cannot be
+                                          undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => deleteEvent(event._id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8">
+                          <TableCell colSpan={6} className="text-center py-8">
                             No events found. Create your first event!
                           </TableCell>
                         </TableRow>
@@ -2026,11 +2112,12 @@ function AdminDashboard() {
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
-                <CardContent>
+                <CardContent className=" max-h-[400px] overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12"></TableHead>
+                        {/* <TableHead>Thumbnail</TableHead> */}
                         <TableHead>Title</TableHead>
                         <TableHead>Speaker</TableHead>
                         <TableHead>Scripture</TableHead>
@@ -2099,12 +2186,13 @@ function AdminDashboard() {
                             </TableCell>
                             <TableCell>{sermon.speaker}</TableCell>
                             <TableCell>
-                              {sermon.scripture && sermon.scripture !== "no  scripture" ||sermon.scripture!=="no-scripture" && (
-                                <Badge variant="outline" className="text-xs">
-                                  {sermon.scripture}
-                                </Badge>
-                               
-                              )}
+                              {(sermon.scripture &&
+                                sermon.scripture !== "no  scripture") ||
+                                (sermon.scripture !== "no-scripture" && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {sermon.scripture}
+                                  </Badge>
+                                ))}
                             </TableCell>
                             <TableCell>
                               {format(new Date(sermon.date), "MMM d, yyyy")}
@@ -2235,13 +2323,14 @@ function AdminDashboard() {
                           ) : users && users.length > 0 ? (
                             users.map((user, index) => {
                               const key = user._id || index;
-                             
+
                               // friendly fallback values
                               const displayName =
                                 user.name?.trim() || `User ${index + 1}`;
                               const displayEmail =
                                 user.email?.trim() || "Visitor";
-                              const displayPhone = user.contact?.trim() || "no contact!";
+                              const displayPhone =
+                                user.contact?.trim() || "no contact!";
                               const subscribedAt = user.createdAt
                                 ? (() => {
                                     try {
@@ -2282,20 +2371,15 @@ function AdminDashboard() {
                                     </div>
                                   </TableCell>
 
-                                  
-
                                   {/* contact */}
                                   <TableCell className="text-gray-400 p-1">
                                     {displayPhone}
                                   </TableCell>
 
-                                  
                                   {/* Subscribed at */}
                                   <TableCell className="text-gray-400 p-1">
                                     {subscribedAt}
                                   </TableCell>
-
-                                 
 
                                   {/* Actions */}
                                   <TableCell>
@@ -2390,7 +2474,7 @@ function AdminDashboard() {
                               variant="outline"
                               onClick={() => {
                                 try {
-                                  const rootUrl = `${window.location.origin}/`; 
+                                  const rootUrl = `${window.location.origin}/`;
                                   navigator.clipboard?.writeText(rootUrl);
                                   toast({ title: "Invite link copied" });
                                 } catch (e) {
@@ -2751,7 +2835,7 @@ function AdminDashboard() {
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
-                <CardContent>
+                <CardContent className=" max-h-[400px] overflow-y-auto">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {galleryLoading ? (
                       Array.from({ length: 8 }).map((_, i) => (
@@ -2946,7 +3030,7 @@ function AdminDashboard() {
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
-                <CardContent>
+                <CardContent className=" max-h-[400px] overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -3112,7 +3196,7 @@ function AdminDashboard() {
                     </AlertDialog>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className=" max-h-[400px] overflow-y-auto">
                   <div className="space-y-4">
                     {notificationsLoading ? (
                       Array.from({ length: 4 }).map((_, i) => (

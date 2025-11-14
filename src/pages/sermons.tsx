@@ -66,8 +66,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "../components/ui/skeleton";
-import { mockSermons } from "../lib/Data";
-import { useAppData } from "../hooks/use-AppData";
+import { useSermons } from "../hooks/useSermons";
 import { useToast } from "../hooks/use-toast";
 
 // Mock Data
@@ -77,15 +76,19 @@ export default function Sermons() {
   const [match, params] = useRoute("/sermons/:sermonId");
   const sermonId = params?.sermonId;
 
-  const { Sermons, loading, refresh } = useAppData();
+  const {
+    data: fetchedSermons = [],
+    isLoading: fetchedLoading,
+    isFetching: fetchedFetching,
+    refetch: refetchSermons,
+  } = useSermons();
   const [searchQuery, setSearchQuery] = useState("");
   const [userId] = useState(localStorage.getItem("visitor_id") || "");
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem("visitor_profile");
     return saved ? JSON.parse(saved) : null;
   });
-  const [allSermons, setAllSermons] = useState(Sermons);
-  const [sermonsLoading, setSermonsLoading] = useState(true);
+  const [allSermons, setAllSermons] = useState<Sermon[]>([]);
   const [initialLoad, setInitialLoad] = useState(true);
   const [fetchingSermon, setFetchingSermon] = useState(false);
 
@@ -122,20 +125,19 @@ export default function Sermons() {
   const [currentPage, setCurrentPage] = useState(0);
   const sermonsPerPage = 6;
   const [liking, setLiking] = useState("");
+  const [saving, setSaving] = useState<string | null>(null);
   const [watchedSermons, setWatchedSermons] = useState<string[]>(() => {
     const saved = localStorage.getItem("watchedSermons");
     return saved ? JSON.parse(saved) : [];
   });
-  const [currentSermon, setCurrentSermon] = useState<
-    (typeof Sermons)[0] | null
-  >(null);
+  const [currentSermon, setCurrentSermon] = useState<Sermon | null>(null);
 
   const displayedSermon = currentSermon || allSermons[0];
   const displayedLikes = (displayedSermon?.likes || []).length || 0;
   const isLiked = !!(displayedSermon?.likes || []).includes(userId);
 
   // Function to handle sermon selection and tracking watched status
-  const handleSelectSermon = (sermon: (typeof Sermons)[0]) => {
+  const handleSelectSermon = (sermon: Sermon) => {
     setCurrentSermon(sermon);
 
     if (!watchedSermons.includes(sermon._id)) {
@@ -150,8 +152,8 @@ export default function Sermons() {
 
   useEffect(() => {
     const initializeSermons = async () => {
-      if (!loading && Sermons?.length > 0) {
-        setAllSermons(Sermons);
+      if (!fetchedLoading && fetchedSermons?.length > 0) {
+        setAllSermons(fetchedSermons);
 
         if (initialLoad) {
           if (sermonId) {
@@ -160,8 +162,8 @@ export default function Sermons() {
 
             if (!success) {
               // Fallback to local data if API fails
-              const targetSermon = Sermons.find(
-                (sermon) => sermon._id === sermonId
+              const targetSermon = fetchedSermons.find(
+                (sermon: Sermon) => sermon._id === sermonId
               );
               if (targetSermon) {
                 setCurrentSermon(targetSermon);
@@ -183,22 +185,24 @@ export default function Sermons() {
             }
           } else {
             // If no sermon ID, load the latest live sermon or first sermon
-            const filteredSermons = Sermons.filter((sermon) => sermon.isLive);
+            const filteredSermons = fetchedSermons.filter(
+              (sermon: Sermon) => sermon.isLive
+            );
             if (!currentSermon && filteredSermons.length > 0) {
-              setCurrentSermon(filteredSermons[0] || Sermons[0]);
+              setCurrentSermon(filteredSermons[0] || fetchedSermons[0]);
+            } else if (!currentSermon && fetchedSermons.length > 0) {
+              setCurrentSermon(fetchedSermons[0]);
             }
           }
           setInitialLoad(false);
         }
-
-        setSermonsLoading(false);
       }
     };
 
     initializeSermons();
   }, [
-    loading,
-    Sermons,
+    fetchedLoading,
+    fetchedSermons,
     currentSermon,
     sermonId,
     initialLoad,
@@ -302,7 +306,7 @@ export default function Sermons() {
           }
         } else {
           // Otherwise, refresh background data to be safe
-          refresh();
+          refetchSermons();
         }
       } else {
         // rollback on unexpected status
@@ -327,7 +331,7 @@ export default function Sermons() {
     }
   };
   const saveSermon = async (sermonId: string) => {
-    setLiking("saving");
+    setSaving(sermonId);
     const userId = localStorage.getItem("visitor_id");
 
     console.log(`Saving sermon ${sermonId} for user ${userId}`);
@@ -345,7 +349,7 @@ export default function Sermons() {
           );
           setUser(res.data.user);
         }
-        refresh();
+        refetchSermons();
       }
     } catch (error) {
       console.error(error);
@@ -354,7 +358,7 @@ export default function Sermons() {
         variant: "destructive",
       });
     } finally {
-      setLiking("");
+      setSaving(null);
     }
   };
 
@@ -374,6 +378,11 @@ export default function Sermons() {
               Experience our worship services and dive deeper into God's Word
               through our sermon archive.
             </p>
+            {fetchedFetching && (
+              <div className="mt-4 flex justify-center">
+                <Loader className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -388,18 +397,20 @@ export default function Sermons() {
                 <Card className="overflow-hidden shadow-lg">
                   <CardContent className="p-0">
                     <div className="relative">
-                      {fetchingSermon ? (
+                      {fetchedLoading ? (
+                        <div className="w-full aspect-video bg-muted animate-pulse flex items-center justify-center">
+                          <Skeleton className="w-full h-full" />
+                        </div>
+                      ) : fetchingSermon ? (
                         <div className="w-full aspect-video bg-muted flex items-center justify-center">
                           <Loader className="w-8 h-8 animate-spin" />
                         </div>
                       ) : (
-                        (currentSermon || allSermons[0]) && (
+                        displayedSermon && (
                           <VideoPlayer
-                            key={(currentSermon || allSermons[0])?._id}
-                            videoUrl={
-                              (currentSermon || allSermons[0])?.videoUrl || ""
-                            }
-                            title={(currentSermon || allSermons[0])?.title}
+                            key={displayedSermon?._id}
+                            videoUrl={displayedSermon?.videoUrl || ""}
+                            title={displayedSermon?.title}
                             autoplay={sermonId ? true : false}
                           />
                         )
@@ -463,7 +474,7 @@ export default function Sermons() {
                         <span
                           role="button"
                           aria-pressed={isLiked}
-                          className={`flex-row cursor-pointer flex items-center gap-2 transition-colors ${
+                          className={`flex-row cursor-pointer flex items-center gap-1 transition-colors ${
                             isLiked ? "text-primary" : "hover:text-primary"
                           }`}
                           onClick={() =>
@@ -474,7 +485,11 @@ export default function Sermons() {
                             {displayedLikes}{" "}
                             {displayedLikes === 1 ? "Like" : "Likes"}
                           </span>
-                          <ThumbsUpIcon size={16} />
+                          {liking ? (
+                            <Loader className="animate-spin" size={16} />
+                          ) : (
+                            <ThumbsUpIcon className="mb-1" size={16} />
+                          )}
                         </span>
 
                         {/* Saving Btn */}
@@ -493,11 +508,13 @@ export default function Sermons() {
                               ? "Saved"
                               : "Save"}
                           </span>
-                          {user &&
-                          user?.savedSermons?.length > 0 &&
-                          user?.savedSermons.includes(
-                            displayedSermon?._id || ""
-                          ) ? (
+                          {saving === displayedSermon?._id ? (
+                            <Loader className="animate-spin" size={16} />
+                          ) : user &&
+                            user?.savedSermons?.length > 0 &&
+                            user?.savedSermons.includes(
+                              displayedSermon?._id || ""
+                            ) ? (
                             <BookmarkCheck size={16} />
                           ) : (
                             <Bookmark size={16} />
@@ -538,13 +555,6 @@ export default function Sermons() {
                             )}
                         </span>
                       </span>
-                      {/* Liking Spinner */}
-                      {liking !== "" && (
-                        <span className=" flex-row  flex items-center gap-2     p-3 text-xs text-muted-foreground">
-                          <Loader className="animate-spin" size={16} />{" "}
-                          {liking === "liking" ? "Liking..." : "Saving..."}
-                        </span>
-                      )}
 
                       {/* Audio Player - Always show if available */}
                       {(currentSermon || allSermons[0])?.audioUrl && (
@@ -817,7 +827,9 @@ export default function Sermons() {
             id="sermon-grid"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0"
           >
-            {sermonsLoading || (searchQuery && searchLoading) ? (
+            {fetchedLoading ||
+            fetchedFetching ||
+            (searchQuery && searchLoading) ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="overflow-hidden">
                   <Skeleton className="w-full aspect-video" />
