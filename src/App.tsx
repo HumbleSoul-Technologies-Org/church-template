@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth-provider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import Home from "@/pages/home";
@@ -11,7 +12,7 @@ import Events from "@/pages/events";
 import Donations from "@/pages/donations";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-import CustomizePage from './pages/customize';
+import CustomizePage from "./pages/customize";
 import { SermonProvider } from "./contexts/SermonContext";
 function Router() {
   return (
@@ -36,15 +37,18 @@ function Router() {
 }
 
 function App() {
+  const queryClient = new QueryClient();
   return (
-    <AuthProvider>
-      <TooltipProvider>
-        <SermonProvider>
-          <Router />
-          <Toaster />
-        </SermonProvider>
-      </TooltipProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <SermonProvider>
+            <Router />
+            <Toaster />
+          </SermonProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

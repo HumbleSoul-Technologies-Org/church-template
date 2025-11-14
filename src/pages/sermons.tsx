@@ -25,32 +25,27 @@ interface Sermon {
   createdAt: string;
 }
 
-interface User { 
-    name: String;
-      email: String;
-    profileImage: {
-      url: String;
-      public_id: String;
-    };
-    reminders: [
-      
-    ],
- 
-    banned: {
-        status:  Boolean,
-      reason:  String,
-      
-       
-    },
-    
-    verificationToken: {
-      type: String,
-      
-    },
-    isVerified:  Boolean,
-    visitorId: String,
-    contact: String,
-    savedSermons: string[],
+interface User {
+  name: String;
+  email: String;
+  profileImage: {
+    url: String;
+    public_id: String;
+  };
+  reminders: [];
+
+  banned: {
+    status: Boolean;
+    reason: String;
+  };
+
+  verificationToken: {
+    type: String;
+  };
+  isVerified: Boolean;
+  visitorId: String;
+  contact: String;
+  savedSermons: string[];
 }
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
@@ -74,7 +69,6 @@ import { Skeleton } from "../components/ui/skeleton";
 import { mockSermons } from "../lib/Data";
 import { useAppData } from "../hooks/use-AppData";
 import { useToast } from "../hooks/use-toast";
- 
 
 // Mock Data
 
@@ -82,11 +76,11 @@ export default function Sermons() {
   const { toast } = useToast();
   const [match, params] = useRoute("/sermons/:sermonId");
   const sermonId = params?.sermonId;
-  
+
   const { Sermons, loading, refresh } = useAppData();
   const [searchQuery, setSearchQuery] = useState("");
   const [userId] = useState(localStorage.getItem("visitor_id") || "");
-  const [user, setUser] = useState< User | null>(() => {
+  const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem("visitor_profile");
     return saved ? JSON.parse(saved) : null;
   });
@@ -99,7 +93,9 @@ export default function Sermons() {
   const fetchSermonById = async (id: string) => {
     setFetchingSermon(true);
     try {
-      const response = await axios.get(`${Configs.url}/api/sermons/sermon/${id}`);
+      const response = await axios.get(
+        `${Configs.url}/api/sermons/sermon/${id}`
+      );
       if (response.status === 200 && response.data) {
         setCurrentSermon(response.data.sermon);
         // Add to watched sermons
@@ -112,11 +108,11 @@ export default function Sermons() {
       }
       return false;
     } catch (error) {
-      console.error('Error fetching sermon:', error);
+      console.error("Error fetching sermon:", error);
       toast({
         title: "Error loading sermon",
         description: "Could not load the requested sermon. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
     } finally {
@@ -133,6 +129,10 @@ export default function Sermons() {
   const [currentSermon, setCurrentSermon] = useState<
     (typeof Sermons)[0] | null
   >(null);
+
+  const displayedSermon = currentSermon || allSermons[0];
+  const displayedLikes = (displayedSermon?.likes || []).length || 0;
+  const isLiked = !!(displayedSermon?.likes || []).includes(userId);
 
   // Function to handle sermon selection and tracking watched status
   const handleSelectSermon = (sermon: (typeof Sermons)[0]) => {
@@ -152,27 +152,32 @@ export default function Sermons() {
     const initializeSermons = async () => {
       if (!loading && Sermons?.length > 0) {
         setAllSermons(Sermons);
-        
+
         if (initialLoad) {
           if (sermonId) {
             // First try to fetch the specific sermon from API
             const success = await fetchSermonById(sermonId);
-            
+
             if (!success) {
               // Fallback to local data if API fails
-              const targetSermon = Sermons.find(sermon => sermon._id === sermonId);
+              const targetSermon = Sermons.find(
+                (sermon) => sermon._id === sermonId
+              );
               if (targetSermon) {
                 setCurrentSermon(targetSermon);
                 if (!watchedSermons.includes(targetSermon._id)) {
                   const newWatched = [...watchedSermons, targetSermon._id];
                   setWatchedSermons(newWatched);
-                  localStorage.setItem("watchedSermons", JSON.stringify(newWatched));
+                  localStorage.setItem(
+                    "watchedSermons",
+                    JSON.stringify(newWatched)
+                  );
                 }
               } else {
                 toast({
                   title: "Sermon not found",
                   description: "The requested sermon could not be found.",
-                  variant: "destructive"
+                  variant: "destructive",
                 });
               }
             }
@@ -185,13 +190,22 @@ export default function Sermons() {
           }
           setInitialLoad(false);
         }
-        
+
         setSermonsLoading(false);
       }
     };
 
     initializeSermons();
-  }, [loading, Sermons, currentSermon, sermonId, initialLoad, watchedSermons, toast, fetchSermonById]);
+  }, [
+    loading,
+    Sermons,
+    currentSermon,
+    sermonId,
+    initialLoad,
+    watchedSermons,
+    toast,
+    fetchSermonById,
+  ]);
 
   const filteredSermons = allSermons.filter(
     (sermon) =>
@@ -203,7 +217,7 @@ export default function Sermons() {
 
   const displaySermons = searchQuery ? filteredSermons : allSermons;
   const searchLoading = false; // No async search, so always false
-  
+
   // Calculate pagination
   const pageCount = Math.ceil(displaySermons.length / sermonsPerPage);
   const offset = currentPage * sermonsPerPage;
@@ -211,7 +225,10 @@ export default function Sermons() {
 
   const handlePageChange = ({ selected }: { selected: number }) => {
     setCurrentPage(selected);
-    window.scrollTo({ top: document.getElementById('sermon-grid')?.offsetTop || 0, behavior: 'smooth' });
+    window.scrollTo({
+      top: document.getElementById("sermon-grid")?.offsetTop || 0,
+      behavior: "smooth",
+    });
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -221,19 +238,90 @@ export default function Sermons() {
   };
 
   const likeSermon = async (sermonId: string) => {
+    // Optimistic toggle: add/remove userId from sermon.likes locally
+    if (!userId) {
+      toast({
+        title: "You must be signed in to like a sermon",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLiking("liking");
-    const userId = localStorage.getItem("visitor_id");
+
+    // Find sermon index in local list
+    const sermonIndex = allSermons.findIndex((s) => s._id === sermonId);
+
+    // Keep copies for rollback
+    const prevAllSermons = [...allSermons];
+    const prevCurrent = currentSermon ? { ...currentSermon } : null;
+
+    // Helper to toggle likes array
+    const toggleLikeArray = (likes: string[] = []) => {
+      if (likes.includes(userId)) {
+        return likes.filter((id) => id !== userId);
+      }
+      return [...likes, userId];
+    };
+
+    // Apply optimistic update
     try {
+      if (sermonIndex !== -1) {
+        const updated = [...allSermons];
+        updated[sermonIndex] = {
+          ...updated[sermonIndex],
+          likes: toggleLikeArray(updated[sermonIndex].likes || []),
+        } as (typeof updated)[0];
+        setAllSermons(updated);
+      }
+
+      if (currentSermon && currentSermon._id === sermonId) {
+        setCurrentSermon({
+          ...currentSermon,
+          likes: toggleLikeArray(currentSermon.likes || []),
+        });
+      }
+
       const res = await axios.post(
         `${Configs.url}/api/sermons/like/sermon/${sermonId}`,
         { userId }
       );
+
       if (res.status === 200) {
         toast({ title: `${res.data.message}` });
-        refresh();
+        // If server returned updated sermon, reconcile local state
+        if (res.data.sermon) {
+          const updatedFromServer = res.data.sermon;
+          setAllSermons((prev) =>
+            prev.map((s) =>
+              s._id === updatedFromServer._id ? updatedFromServer : s
+            )
+          );
+          if (currentSermon && currentSermon._id === updatedFromServer._id) {
+            setCurrentSermon(updatedFromServer);
+          }
+        } else {
+          // Otherwise, refresh background data to be safe
+          refresh();
+        }
+      } else {
+        // rollback on unexpected status
+        setAllSermons(prevAllSermons);
+        if (prevCurrent) setCurrentSermon(prevCurrent);
+        toast({
+          title: `Could not like sermon. Please try again.`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: `An Error occurred while liking the sermon, please try again!.` ,variant:"destructive"});
+      // rollback optimistic changes
+      setAllSermons(prevAllSermons);
+      if (prevCurrent) setCurrentSermon(prevCurrent);
+      console.error(error);
+      toast({
+        title: `An error occurred while liking the sermon.`,
+        variant: "destructive",
+      });
     } finally {
       setLiking("");
     }
@@ -251,20 +339,24 @@ export default function Sermons() {
       if (res.status === 200) {
         toast({ title: `${res.data.message}` });
         if (res.data.user) {
-          localStorage.setItem("visitor_profile", JSON.stringify(res.data.user));
+          localStorage.setItem(
+            "visitor_profile",
+            JSON.stringify(res.data.user)
+          );
           setUser(res.data.user);
         }
         refresh();
       }
     } catch (error) {
-       console.error(error);
-      toast({ title: `An Error occurred while liking the sermon, please try again!.` ,variant:"destructive"});
+      console.error(error);
+      toast({
+        title: `An Error occurred while liking the sermon, please try again!.`,
+        variant: "destructive",
+      });
     } finally {
       setLiking("");
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -287,384 +379,398 @@ export default function Sermons() {
       </section>
 
       {/* Sermon Player Section */}
-      {currentSermon  && (
-<section className="py-4 sm:py-8 bg-card">
-        <div className="container mx-auto px-2 sm:px-4 lg:px-8 max-w-[1400px]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-            {/* Main Video Player */}
-            <div className="col-span-1 lg:col-span-8">
-              <Card className="overflow-hidden shadow-lg">
-                <CardContent className="p-0">
-                  <div className="relative">
-                    {fetchingSermon ? (
-                      <div className="w-full aspect-video bg-muted flex items-center justify-center">
-                        <Loader className="w-8 h-8 animate-spin" />
-                      </div>
-                    ) : (currentSermon || allSermons[0]) && (
-                      <VideoPlayer
-                        key={(currentSermon || allSermons[0])?._id}
-                        videoUrl={
-                          (currentSermon || allSermons[0])?.videoUrl || ""
-                        }
-                        title={(currentSermon || allSermons[0])?.title}
-                        autoplay={sermonId ? true : false}
-                      />
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      {(currentSermon || allSermons[0])?.series && (
-                        <Badge variant="secondary" className="text-xs">
-                          {(currentSermon || allSermons[0])?.series}
-                        </Badge>
+      {currentSermon && (
+        <section className="py-4 sm:py-8 bg-card">
+          <div className="container mx-auto px-2 sm:px-4 lg:px-8 max-w-[1400px]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+              {/* Main Video Player */}
+              <div className="col-span-1 lg:col-span-8">
+                <Card className="overflow-hidden shadow-lg">
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      {fetchingSermon ? (
+                        <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                          <Loader className="w-8 h-8 animate-spin" />
+                        </div>
+                      ) : (
+                        (currentSermon || allSermons[0]) && (
+                          <VideoPlayer
+                            key={(currentSermon || allSermons[0])?._id}
+                            videoUrl={
+                              (currentSermon || allSermons[0])?.videoUrl || ""
+                            }
+                            title={(currentSermon || allSermons[0])?.title}
+                            autoplay={sermonId ? true : false}
+                          />
+                        )
                       )}
-                      <span className="flex flex-wrap items-center text-muted-foreground text-sm w-full">
-                        <span className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:flex-1">
-                          {(currentSermon || allSermons[0])?.isLive ? (
-                            <Badge
-                              variant="default"
-                              className="bg-green-500 text-white"
-                            >
-                              <Circle className="text-white mr-2 animate-pulse" />
-                              Live Now
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">
-                              <Archive size={20} className=" mr-2" /> Recorded
-                            </Badge>
-                          )}
-                        </span>
-                        {/* <Badge
+                    </div>
+                    <div className="p-6">
+                      <div className="flex flex-wrap items-center gap-2 mb-4">
+                        {(currentSermon || allSermons[0])?.series && (
+                          <Badge variant="secondary" className="text-xs">
+                            {(currentSermon || allSermons[0])?.series}
+                          </Badge>
+                        )}
+                        <span className="flex flex-wrap items-center text-muted-foreground text-sm w-full">
+                          <span className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:flex-1">
+                            {(currentSermon || allSermons[0])?.isLive ? (
+                              <Badge
+                                variant="default"
+                                className="bg-green-500 text-white"
+                              >
+                                <Circle className="text-white mr-2 animate-pulse" />
+                                Live Now
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">
+                                <Archive size={20} className=" mr-2" /> Recorded
+                              </Badge>
+                            )}
+                          </span>
+                          {/* <Badge
                           variant="outline"
                           className="text-xs mt-4 sm:mt-0  "
                         >
                           <EyeIcon className="inline-block mr-1 h-4 w-4" />
                           Views 10
                         </Badge> */}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">
-                      {(currentSermon || allSermons[0])?.title ||
-                        "Select a sermon to watch"}
-                    </h3>
-                    <div className="flex items-center text-muted-foreground text-sm mb-4">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>{(currentSermon || allSermons[0])?.speaker}</span>
-                    </div>
-                    {(currentSermon || allSermons[0])?.scripture && (
-                      <div className="mt-4 mb-5">
-                        <Badge variant="outline" className="text-xs">
-                          Scripture:{" "}
-                          {(currentSermon || allSermons[0])?.scripture}
-                        </Badge>
-                      </div>
-                    )}
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {(currentSermon || allSermons[0])?.description}
-                    </p>
-
-                    {/* Likes and Share Section */}
-                    <span className="flex-row mt-10 flex items-center gap-4 p-3 text-xs text-muted-foreground">
-
-                      {/* Liking Btn */}
-                      <span
-                        className="flex-row cursor-pointer flex items-center gap-2 hover:text-primary transition-colors"
-                        onClick={() =>
-                          !liking &&
-                          likeSermon((currentSermon || allSermons[0])?._id)
-                        }
-                      >
-                        <span>
-                          {
-                            ((currentSermon || allSermons[0])?.likes || [])
-                              .length
-                          }{" "}
-                          Likes
                         </span>
-                        <ThumbsUpIcon size={16} />
-                      </span>
-
-                      {/* Saving Btn */}
-                      <span
-                        className="flex-row cursor-pointer flex items-center gap-2 hover:text-primary transition-colors"
-                        onClick={() =>
-                          !liking &&
-                          saveSermon((currentSermon || allSermons[0])?._id)
-                        }
-                      >
-                        <span>
-                            {user && user?.savedSermons?.length > 0 && user?.savedSermons.includes((currentSermon || allSermons[0])?._id) ? "Saved" : "Save"}
-                          {/* Likes */}
-                        </span>
-                        {user && user?.savedSermons?.length > 0 && user?.savedSermons.includes((currentSermon || allSermons[0])?._id) ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-                      </span>
-
-                      {/* Sharing Btn */}
-                      <span
-                        className="flex-row cursor-pointer flex-1 flex items-center gap-2 hover:text-primary transition-colors"
-                        onClick={() => {
-                          try {
-                            const url = `${window.location.origin}/sermons/${
-                              (currentSermon || allSermons[0])?._id
-                            }`;
-                            navigator.clipboard?.writeText(url);
-                            toast({ title: "Sermon link copied" });
-                          } catch (e) {
-                            toast({
-                              title: "Could not copy sermon link",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                      >
-                        <span>Share</span>
-                        <Share2 size={16} />
-                      </span>
-                      <span className="text-xs text-muted">
-                        {(currentSermon || allSermons[0])?.createdAt &&
-                          format(
-                            new Date(
-                              (currentSermon || allSermons[0])?.createdAt
-                            ),
-                            "MMMM d, yyyy"
-                          )}
-                      </span>
-                      <span className="text-xs text-muted">
-                        {(currentSermon || allSermons[0])?.date &&
-                          format(
-                            new Date((currentSermon || allSermons[0])?.date),
-                            "MMMM d, yyyy"
-                          )}
-                      </span>
-                    </span>
-                    {/* Liking Spinner */}
-                    {liking !== "" && (
-                      <span className=" flex-row  flex items-center gap-2     p-3 text-xs text-muted-foreground">
-                        <Loader className="animate-spin" size={16} />{" "}
-                        {liking === "liking" ? "Liking..." : "Saving..."}
-                      </span>
-                    )}
-
-                    {/* Audio Player - Always show if available */}
-                    {(currentSermon || allSermons[0])?.audioUrl && (
-                      <div className="mt-6 border-t pt-6">
-                        <h4 className="text-sm font-semibold mb-3">
-                          Listen to Audio Version
-                        </h4>
-                        <AudioPlayer
-                          audioUrl={
-                            (currentSermon || allSermons[0])?.audioUrl || ""
-                          }
-                          title={(currentSermon || allSermons[0])?.title || ""}
-                          speaker={(currentSermon || allSermons[0])?.speaker}
-                        />
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>{" "}
-            {/* Side Sections */}
-            <div className="col-span-1 lg:col-span-4 grid grid-rows-1 lg:grid-rows-2 gap-4 lg:gap-6">
-              {/* Watched Sermons */}
-              <Card className="overflow-hidden flex-1">
-                <CardContent className="p-2 sm:p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Recently Watched</h3>
-                    {watchedSermons.length > 3 && (
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        View All
-                      </Button>
-                    )}
-                  </div>
-                  {allSermons.length > 0 && watchedSermons.length > 0 ? (
-                    <div className="space-y-4  max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
-                      {allSermons
-                        .filter((sermon) => watchedSermons.includes(sermon._id))
+                      <h3 className="text-xl font-semibold mb-2">
+                        {(currentSermon || allSermons[0])?.title ||
+                          "Select a sermon to watch"}
+                      </h3>
+                      <div className="flex items-center text-muted-foreground text-sm mb-4">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>{(currentSermon || allSermons[0])?.speaker}</span>
+                      </div>
+                      {(currentSermon || allSermons[0])?.scripture && (
+                        <div className="mt-4 mb-5">
+                          <Badge variant="outline" className="text-xs">
+                            Scripture:{" "}
+                            {(currentSermon || allSermons[0])?.scripture}
+                          </Badge>
+                        </div>
+                      )}
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        {(currentSermon || allSermons[0])?.description}
+                      </p>
 
-                        .map((sermon) => (
-                          <Card
-                            key={sermon._id}
-                            className={`hover:shadow-md transition-all 
+                      {/* Likes and Share Section */}
+                      <span className="flex-row mt-10 flex items-center gap-4 p-3 text-xs text-muted-foreground">
+                        {/* Liking Btn */}
+                        <span
+                          role="button"
+                          aria-pressed={isLiked}
+                          className={`flex-row cursor-pointer flex items-center gap-2 transition-colors ${
+                            isLiked ? "text-primary" : "hover:text-primary"
+                          }`}
+                          onClick={() =>
+                            !liking && likeSermon(displayedSermon?._id || "")
+                          }
+                        >
+                          <span>
+                            {displayedLikes}{" "}
+                            {displayedLikes === 1 ? "Like" : "Likes"}
+                          </span>
+                          <ThumbsUpIcon size={16} />
+                        </span>
+
+                        {/* Saving Btn */}
+                        <span
+                          className="flex-row cursor-pointer flex items-center gap-2 hover:text-primary transition-colors"
+                          onClick={() =>
+                            !liking && saveSermon(displayedSermon?._id || "")
+                          }
+                        >
+                          <span>
+                            {user &&
+                            user?.savedSermons?.length > 0 &&
+                            user?.savedSermons.includes(
+                              displayedSermon?._id || ""
+                            )
+                              ? "Saved"
+                              : "Save"}
+                          </span>
+                          {user &&
+                          user?.savedSermons?.length > 0 &&
+                          user?.savedSermons.includes(
+                            displayedSermon?._id || ""
+                          ) ? (
+                            <BookmarkCheck size={16} />
+                          ) : (
+                            <Bookmark size={16} />
+                          )}
+                        </span>
+
+                        {/* Sharing Btn */}
+                        <span
+                          className="flex-row cursor-pointer flex-1 flex items-center gap-2 hover:text-primary transition-colors"
+                          onClick={() => {
+                            try {
+                              const url = `${window.location.origin}/sermons/${displayedSermon?._id}`;
+                              navigator.clipboard?.writeText(url);
+                              toast({ title: "Sermon link copied" });
+                            } catch (e) {
+                              toast({
+                                title: "Could not copy sermon link",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <span>Share</span>
+                          <Share2 size={16} />
+                        </span>
+                        <span className="text-xs text-muted">
+                          {displayedSermon?.createdAt &&
+                            format(
+                              new Date(displayedSermon.createdAt),
+                              "MMMM d, yyyy"
+                            )}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {displayedSermon?.date &&
+                            format(
+                              new Date(displayedSermon.date),
+                              "MMMM d, yyyy"
+                            )}
+                        </span>
+                      </span>
+                      {/* Liking Spinner */}
+                      {liking !== "" && (
+                        <span className=" flex-row  flex items-center gap-2     p-3 text-xs text-muted-foreground">
+                          <Loader className="animate-spin" size={16} />{" "}
+                          {liking === "liking" ? "Liking..." : "Saving..."}
+                        </span>
+                      )}
+
+                      {/* Audio Player - Always show if available */}
+                      {(currentSermon || allSermons[0])?.audioUrl && (
+                        <div className="mt-6 border-t pt-6">
+                          <h4 className="text-sm font-semibold mb-3">
+                            Listen to Audio Version
+                          </h4>
+                          <AudioPlayer
+                            audioUrl={
+                              (currentSermon || allSermons[0])?.audioUrl || ""
+                            }
+                            title={
+                              (currentSermon || allSermons[0])?.title || ""
+                            }
+                            speaker={(currentSermon || allSermons[0])?.speaker}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>{" "}
+              {/* Side Sections */}
+              <div className="col-span-1 lg:col-span-4 grid grid-rows-1 lg:grid-rows-2 gap-4 lg:gap-6">
+                {/* Watched Sermons */}
+                <Card className="overflow-hidden flex-1">
+                  <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold">Recently Watched</h3>
+                      {watchedSermons.length > 3 && (
+                        <Button variant="ghost" size="sm" className="text-xs">
+                          View All
+                        </Button>
+                      )}
+                    </div>
+                    {allSermons.length > 0 && watchedSermons.length > 0 ? (
+                      <div className="space-y-4  max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
+                        {allSermons
+                          .filter((sermon) =>
+                            watchedSermons.includes(sermon._id)
+                          )
+
+                          .map((sermon) => (
+                            <Card
+                              key={sermon._id}
+                              className={`hover:shadow-md transition-all 
                             cursor-pointer hover:bg-slate-300 group transform hover:scale-[1.02] ${
                               currentSermon?._id === sermon._id
                                 ? "ring-2 ring-primary bg-primary/5"
                                 : "hover:bg-muted/50"
                             }`}
-                            onClick={() => handleSelectSermon(sermon)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                handleSelectSermon(sermon);
-                              }
-                            }}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex flex-col gap-3">
+                              onClick={() => handleSelectSermon(sermon)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  handleSelectSermon(sermon);
+                                }
+                              }}
+                            >
+                              <CardContent className="p-3">
                                 <div className="flex flex-col gap-3">
-                                  <div className="flex gap-3">
-                                    <div className="w-24 h-16 relative flex-shrink-0">
-                                      <img
-                                        src={
-                                          sermon.thumbnail?.url ||
-                                          sermon.thumbnailUrl ||
-                                          "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
-                                        }
-                                        alt={sermon.title}
-                                        className="w-full h-full object-cover rounded"
-                                        onError={(e) => {
-                                          const img =
-                                            e.target as HTMLImageElement;
-                                          if (
-                                            img.src !==
+                                  <div className="flex flex-col gap-3">
+                                    <div className="flex gap-3">
+                                      <div className="w-24 h-16 relative flex-shrink-0">
+                                        <img
+                                          src={
+                                            sermon.thumbnail?.url ||
+                                            sermon.thumbnailUrl ||
                                             "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
-                                          ) {
-                                            img.src =
-                                              "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
                                           }
-                                        }}
-                                      />
+                                          alt={sermon.title}
+                                          className="w-full h-full object-cover rounded"
+                                          onError={(e) => {
+                                            const img =
+                                              e.target as HTMLImageElement;
+                                            if (
+                                              img.src !==
+                                              "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
+                                            ) {
+                                              img.src =
+                                                "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
+                                            }
+                                          }}
+                                        />
 
-                                      <div
-                                        className={`absolute inset-0 bg-black/20 flex items-center justify-center 
+                                        <div
+                                          className={`absolute inset-0 bg-black/20 flex items-center justify-center 
                                   ${
                                     currentSermon?._id === sermon._id
                                       ? "opacity-100"
                                       : "opacity-0 group-hover:opacity-100"
                                   } transition-opacity
                                 `}
-                                      >
-                                        <Play className="h-6 w-6 text-white" />
+                                        >
+                                          <Play className="h-6 w-6 text-white" />
+                                        </div>
                                       </div>
-                                    </div>
 
-                                    {/* details */}
-                                    <div className="flex-1 min-w-0">
-                                      <h4
-                                        className={`font-medium text-sm line-clamp-1 mb-1
+                                      {/* details */}
+                                      <div className="flex-1 min-w-0">
+                                        <h4
+                                          className={`font-medium text-sm line-clamp-1 mb-1
                                   ${
                                     currentSermon?._id === sermon._id
                                       ? "text-primary"
                                       : ""
                                   }
                                 `}
-                                      >
-                                        {sermon.title}
-                                      </h4>{" "}
-                                      <div className="flex items-center text-xs text-muted-foreground gap-2 mb-2">
-                                        <span>{sermon.speaker}</span>
-                                        <span>•</span>
-                                        <span>
-                                          {format(
-                                            new Date(sermon.date),
-                                            "MMM d, yyyy"
-                                          )}
-                                        </span>
+                                        >
+                                          {sermon.title}
+                                        </h4>{" "}
+                                        <div className="flex items-center text-xs text-muted-foreground gap-2 mb-2">
+                                          <span>{sermon.speaker}</span>
+                                          <span>•</span>
+                                          <span>
+                                            {format(
+                                              new Date(sermon.date),
+                                              "MMM d, yyyy"
+                                            )}
+                                          </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground line-clamp-2">
+                                          {sermon.description}
+                                        </p>
                                       </div>
-                                      <p className="text-xs text-muted-foreground line-clamp-2">
-                                        {sermon.description}
-                                      </p>
                                     </div>
                                   </div>
+                                  {sermon.audioUrl && (
+                                    <div className="w-full">
+                                      <AudioPlayer
+                                        audioUrl={sermon.audioUrl}
+                                        title={sermon.title}
+                                        speaker={sermon.speaker}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
-                                {sermon.audioUrl && (
-                                  <div className="w-full">
-                                    <AudioPlayer
-                                      audioUrl={sermon.audioUrl}
-                                      title={sermon.title}
-                                      speaker={sermon.speaker}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-[300px] text-center p-4">
-                      <div className="mb-4">
-                        <Play className="h-12 w-12 text-muted-foreground/30" />
+                              </CardContent>
+                            </Card>
+                          ))}
                       </div>
-                      <h4 className="text-sm font-medium text-foreground mb-2">
-                        No Recently Watched Sermons
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Start watching sermons to see your history here.
-                      </p>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[300px] text-center p-4">
+                        <div className="mb-4">
+                          <Play className="h-12 w-12 text-muted-foreground/30" />
+                        </div>
+                        <h4 className="text-sm font-medium text-foreground mb-2">
+                          No Recently Watched Sermons
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Start watching sermons to see your history here.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Comments Section */}
+                <Card className="relative hidden  flex-col p-2 sm:p-4 max-h-[360px] lg:max-h-[400px]">
+                  <CardContent className="overflow-y-auto">
+                    <h3 className="font-semibold m-2 sm:m-4">Comments</h3>
+                    <Card className="flex-1 w-full bg-background mb-3 border-0">
+                      {/* comment card */}
+                      <span className="shadow-lg hidden mb-4 w-full pb-3 sm:pb-5 justify-center text-muted-foreground">
+                        <span className="flex items-center gap-2 p-2 sm:p-3">
+                          <img
+                            className="rounded-full w-8 h-8 sm:w-10 sm:h-10"
+                            src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"
+                          />
+                          <p className="text-sm font-medium flex-1 truncate">
+                            User@gmail.com
+                          </p>
+                          <p className="text-xs text-muted font-medium hidden sm:block">
+                            User@gmail.com
+                          </p>
+                        </span>
+                        <p className="text-sm flex-wrap p-2 sm:p-3 line-clamp-4 sm:line-clamp-none">
+                          Lorem, ipsum dolor sit amet consectetur adipisicing
+                          elit. Ipsum adipisci rem quod officiis, nulla
+                          distinctio minus error, deserunt hic voluptatem
+                          numquam explicabo. Excepturi facilis possimus
+                          repellendus quia molestias. Obcaecati, sapiente.
+                          Excepturi facilis possimus repellendus quia molestias.
+                          Obcaecati, sapiente. Excepturi facilis possimus
+                          repellendus quia molestias. Obcaecati, sapiente.
+                          Excepturi facilis possimus repellendus quia molestias.
+                          Obcaecati, sapiente. Excepturi facilis possimus
+                          repellendus quia molestias. Obcaecati, sapiente.
+                          Excepturi facilis possimus repellendus quia molestias.
+                          Obcaecati, sapiente.
+                        </p>
+
+                        <span className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 cursor-pointer">
+                            <span className="hidden sm:inline">65</span>{" "}
+                            <ThumbsUpIcon size={14} />
+                          </span>
+                          <span className="flex items-center gap-1 cursor-pointer">
+                            <span className="hidden sm:inline">Share</span>{" "}
+                            <Share2 size={14} />
+                          </span>
+                          <span className="text-xs text-muted ml-auto">
+                            2h ago
+                          </span>
+                        </span>
+                      </span>
+                    </Card>
+                  </CardContent>
+                  <div className="sticky bottom-0 p-2 w-full bg-card border-t">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Add comment..."
+                        className="flex-1 bg-background max-h-16"
+                      />
+                      <button className="flex items-center justify-center w-10 h-10 rounded-full bg-background shadow-md hover:bg-muted/50 transition-colors">
+                        <Send className="w-4 h-4 text-muted-foreground cursor-pointer" />
+                      </button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Comments Section */}
-              <Card className="relative hidden  flex-col p-2 sm:p-4 max-h-[360px] lg:max-h-[400px]">
-                <CardContent className="overflow-y-auto">
-                  <h3 className="font-semibold m-2 sm:m-4">Comments</h3>
-                  <Card className="flex-1 w-full bg-background mb-3 border-0">
-                    {/* comment card */}
-                    <span className="shadow-lg hidden mb-4 w-full pb-3 sm:pb-5 justify-center text-muted-foreground">
-                      <span className="flex items-center gap-2 p-2 sm:p-3">
-                        <img
-                          className="rounded-full w-8 h-8 sm:w-10 sm:h-10"
-                          src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"
-                        />
-                        <p className="text-sm font-medium flex-1 truncate">
-                          User@gmail.com
-                        </p>
-                        <p className="text-xs text-muted font-medium hidden sm:block">
-                          User@gmail.com
-                        </p>
-                      </span>
-                      <p className="text-sm flex-wrap p-2 sm:p-3 line-clamp-4 sm:line-clamp-none">
-                        Lorem, ipsum dolor sit amet consectetur adipisicing
-                        elit. Ipsum adipisci rem quod officiis, nulla distinctio
-                        minus error, deserunt hic voluptatem numquam explicabo.
-                        Excepturi facilis possimus repellendus quia molestias.
-                        Obcaecati, sapiente. Excepturi facilis possimus
-                        repellendus quia molestias. Obcaecati, sapiente.
-                        Excepturi facilis possimus repellendus quia molestias.
-                        Obcaecati, sapiente. Excepturi facilis possimus
-                        repellendus quia molestias. Obcaecati, sapiente.
-                        Excepturi facilis possimus repellendus quia molestias.
-                        Obcaecati, sapiente. Excepturi facilis possimus
-                        repellendus quia molestias. Obcaecati, sapiente.
-                      </p>
-
-                      <span className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1 cursor-pointer">
-                          <span className="hidden sm:inline">65</span>{" "}
-                          <ThumbsUpIcon size={14} />
-                        </span>
-                        <span className="flex items-center gap-1 cursor-pointer">
-                          <span className="hidden sm:inline">Share</span>{" "}
-                          <Share2 size={14} />
-                        </span>
-                        <span className="text-xs text-muted ml-auto">
-                          2h ago
-                        </span>
-                      </span>
-                    </span>
-                  </Card>
-                </CardContent>
-                <div className="sticky bottom-0 p-2 w-full bg-card border-t">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="text"
-                      placeholder="Add comment..."
-                      className="flex-1 bg-background max-h-16"
-                    />
-                    <button className="flex items-center justify-center w-10 h-10 rounded-full bg-background shadow-md hover:bg-muted/50 transition-colors">
-                      <Send className="w-4 h-4 text-muted-foreground cursor-pointer" />
-                    </button>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* Sermon Archive */}
@@ -707,7 +813,10 @@ export default function Sermons() {
           </div>
 
           {/* Sermon Grid */}
-          <div id="sermon-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0">
+          <div
+            id="sermon-grid"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0"
+          >
             {sermonsLoading || (searchQuery && searchLoading) ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="overflow-hidden">
@@ -868,7 +977,7 @@ export default function Sermons() {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {displaySermons.length > sermonsPerPage && (
             <div className="mt-8 flex justify-center">

@@ -4,8 +4,8 @@ import { Button } from "../components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import { Church, Menu, LogOut, Settings, Brush } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useEvents } from "@/hooks/useEvents";
-import { useSermons } from "@/hooks/useSermons";
+import { useEvents } from "../hooks/useEvents";
+import { useSermons } from "../hooks/useSermons";
 
 export default function Navigation() {
   const [location] = useLocation();
