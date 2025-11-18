@@ -1269,6 +1269,7 @@ function AdminDashboard() {
 
   // Get Users
   const getSubscribers = async () => {
+    setUsersLoading(true);
     try {
       const response = await axios.get(
         `${Configs.url}/api/news-letter/subscribers`
@@ -1295,7 +1296,10 @@ function AdminDashboard() {
         }));
         setUsers(normalized);
       }
-    } catch (error) {}
+    } catch (error) {
+    } finally {
+      setUsersLoading(false);
+    }
   };
 
   // Event handlers
