@@ -270,7 +270,7 @@ function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [deleteLoading, setdeleteLoading] = useState<string>("");
 
   useEffect(() => {
@@ -2902,7 +2902,17 @@ function AdminDashboard() {
                               Cancel
                             </Button>
                             <Button type="submit">
-                              {loading ? "Adding Image..." : "Add Image"}
+                              {loading ? (
+                                <span className="flex gap-2 items-center">
+                                  Adding Image...{" "}
+                                  <Loader
+                                    className="animate-spin ml-2"
+                                    size={16}
+                                  />
+                                </span>
+                              ) : (
+                                "Add Image"
+                              )}
                             </Button>
                           </DialogFooter>
                         </form>

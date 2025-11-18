@@ -4,7 +4,7 @@ import { Configs } from "../lib/utils";
 import { set } from "date-fns";
 
 interface Event {
-    _id: string;
+  _id: string;
   title: string;
   description: string;
   date: string;
@@ -13,7 +13,7 @@ interface Event {
   speaker?: string;
   thumbnailUrl?: string;
   category: "general" | "service" | "youth" | "community";
-  thumbnail: { url?: string; public_id?: string }
+  thumbnail: { url?: string; public_id?: string };
 }
 
 interface Sermon {
@@ -29,10 +29,9 @@ interface Sermon {
   series?: string;
   isLive?: boolean;
   likes: string[];
-  thumbnail: { url?: string; public_id?: string }
+  thumbnail: { url?: string; public_id?: string };
   createdAt: string;
 }
-  
 
 interface AppData {
   events: Event[];
@@ -44,7 +43,7 @@ interface AppData {
   refresh: () => void;
   setEvents: (events: Event[]) => void;
 }
-  export type GalleryImage = {
+export type GalleryImage = {
   _id: string;
   title: string;
   imageUrl: string;
@@ -63,7 +62,7 @@ export type Pastor = {
   order: number;
   imageUrl?: string;
 };
- 
+
 export const useAppData = (): AppData => {
   const [events, setEvents] = useState<Event[]>([]);
   const [Sermons, setSermons] = useState<Sermon[]>([]);
@@ -82,13 +81,14 @@ export const useAppData = (): AppData => {
 
     try {
       // Fetch both endpoints in parallel
-      const [eventsRes, sermonsRes, galleryRes, pastorsRes] = await Promise.all([
-        axios.get(`${Configs.url}/api/events/all`),
-        axios.get(`${Configs.url}/api/sermons/all`),
-        axios.get(`${Configs.url}/api/gallery/all`),
-        axios.get(`${Configs.url}/api/pastors/all`),
-      ]);
- 
+      const [eventsRes, sermonsRes, galleryRes, pastorsRes] = await Promise.all(
+        [
+          axios.get(`${Configs.url}/api/events/all`),
+          axios.get(`${Configs.url}/api/sermons/all`),
+          axios.get(`${Configs.url}/api/gallery/all`),
+          axios.get(`${Configs.url}/api/pastors/all`),
+        ]
+      );
 
       // Batch state updates
       const updates = () => {
@@ -96,11 +96,10 @@ export const useAppData = (): AppData => {
         setSermons(sermonsRes.data.sermons || []);
         setGallery(galleryRes.data.gallery || []);
         setPastors(pastorsRes.data.pastors || []);
-         // Force refresh
+        // Force refresh
       };
 
       updates();
-      
     } catch (err: any) {
       console.error("API Error:", err);
       setError(err.response?.data?.message || "Failed to load data");
@@ -111,18 +110,21 @@ export const useAppData = (): AppData => {
 
   // Effect to fetch data on mount and when updateTrigger changes
   useEffect(() => {
-    console.log('Effect triggered, fetching data...');
-    fetchData();
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [fetchData]);
 
-  return { 
-    events, 
+  return {
+    events,
     Sermons,
     gallery,
-    Pastors, 
-    loading, 
-    error, 
-    refresh: fetchData, 
-    setEvents: updateEvents // Use our new memoized setter
+    Pastors,
+    loading,
+    error,
+    refresh: fetchData,
+    setEvents: updateEvents, // Use our new memoized setter
   };
 };
