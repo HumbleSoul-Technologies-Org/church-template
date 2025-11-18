@@ -261,17 +261,19 @@ export default function Home() {
                   </blockquote>
 
                   <div className="mb-6">
-                    <p
-                      className="font-semibold text-foreground"
-                      data-testid="pastor-name"
-                    >
-                      {leadPastor?.name || "Senior Pastor"}
-                    </p>
+                    {leadPastor && (
+                      <p
+                        className="font-semibold text-foreground"
+                        data-testid="pastor-name"
+                      >
+                        {leadPastor?.name}
+                      </p>
+                    )}
                     <p
                       className="text-muted-foreground"
                       data-testid="pastor-title"
                     >
-                      {leadPastor?.title || "Lead Pastor"}
+                      {leadPastor?.title || "Senior Pastor"}
                     </p>
                   </div>
 
