@@ -177,7 +177,7 @@ export default function Footer() {
             </a>
             <a
               href="https://www.tiktok.com/@faithlifemin_ug"
-              className="text-muted-foreground hidden hover:text-primary transition-colors"
+              className="text-muted-foreground  hover:text-primary transition-colors"
               data-testid="social-tiktok"
               target="_blank"
             >
