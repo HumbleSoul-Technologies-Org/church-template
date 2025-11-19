@@ -175,15 +175,7 @@ export default function Footer() {
             >
               <Facebook className="h-6 w-6" />
             </a>
-            <a
-              href="https://www.tiktok.com/@faithlifemin_ug"
-              className="text-muted-foreground  hover:text-primary transition-colors"
-              data-testid="social-tiktok"
-              target="_blank"
-            >
-              {/* <Instagram className="h-6 w-6" /> */}
-              <FaTiktok className="h-4 w-4" />
-            </a>
+
             <a
               href="https://youtube.com/@faithlifeug?si=6Qms06O5o3ckHROg"
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -208,6 +200,15 @@ export default function Footer() {
               data-testid="social-instagram"
             >
               <Instagram className="h-6 w-6" />
+            </a>
+            <a
+              href="https://www.tiktok.com/@faithlifemin_ug"
+              className="text-muted-foreground  hover:text-primary transition-colors"
+              data-testid="social-tiktok"
+              target="_blank"
+            >
+              {/* <Instagram className="h-6 w-6" /> */}
+              <FaTiktok className="h-4 w-4 mt-1" />
             </a>
           </div>
 
