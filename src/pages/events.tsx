@@ -374,11 +374,11 @@ export default function Events() {
               >
                 All Events
               </h2>
-              {backgroundLoading && (
+              {/* {backgroundLoading && (
                 <span className="text-sm text-muted-foreground mb-4">
                   Updating...
                 </span>
-              )}
+              )} */}
             </div>
             <p
               className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto"
