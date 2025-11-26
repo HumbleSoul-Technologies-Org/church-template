@@ -145,12 +145,11 @@ export default function Sermons() {
       setWatchedSermons(newWatched);
       localStorage.setItem("watchedSermons", JSON.stringify(newWatched));
     }
-
-    // Scroll to the player
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   useEffect(() => {
+    // Scroll to the player
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const initializeSermons = async () => {
       if (!fetchedLoading && fetchedSermons?.length > 0) {
         setAllSermons(fetchedSermons);

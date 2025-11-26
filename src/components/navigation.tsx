@@ -21,7 +21,7 @@ export default function Navigation() {
   }, []);
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
+    { href: "/about", label: "About Us" },
     { href: "/sermons", label: "Sermons" },
     { href: "/events", label: "Events" },
   ];
