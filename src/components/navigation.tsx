@@ -37,6 +37,7 @@ export default function Navigation() {
   }) => (
     <Link href={href}>
       <a
+        // style={{ fontFamily: "Dancing Script" }}
         className={`
     transition-colors relative font-medium  group
     ${

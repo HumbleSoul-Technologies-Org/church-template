@@ -73,6 +73,7 @@ export default function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <div className="text-center mb-12">
             <h2
+              style={{ fontFamily: "Dancing Script" }}
               className="text-4xl font-bold text-foreground mb-6"
               data-testid="welcome-title"
             >
@@ -103,6 +104,7 @@ export default function Home() {
                 <h3
                   className="text-2xl font-semibold text-foreground mb-4"
                   data-testid="service-times-title"
+                  style={{ fontFamily: "Dancing Script" }}
                 >
                   Sunday Services
                 </h3>
@@ -132,6 +134,7 @@ export default function Home() {
                 <h3
                   className="text-2xl font-semibold text-foreground mb-4"
                   data-testid="what-to-expect-title"
+                  style={{ fontFamily: "Dancing Script" }}
                 >
                   What to Expect
                 </h3>
@@ -157,12 +160,14 @@ export default function Home() {
               <h2
                 className="text-4xl font-bold text-foreground mb-4"
                 data-testid="upcoming-events-title"
+                style={{ fontFamily: "Dancing Script" }}
               >
                 Upcoming Events
               </h2>
               <p
                 className="text-xl text-muted-foreground"
                 data-testid="upcoming-events-description"
+                style={{ fontFamily: "Dancing Script" }}
               >
                 Join us for fellowship, growth, and community
               </p>
@@ -205,6 +210,7 @@ export default function Home() {
                   <Button
                     className="bg-secondary text-secondary-foreground hover:opacity-90"
                     data-testid="button-view-all-events"
+                    style={{ fontFamily: "Dancing Script" }}
                   >
                     View All Events
                   </Button>
@@ -245,6 +251,7 @@ export default function Home() {
                   <h2
                     className="text-4xl font-bold text-foreground mb-6"
                     data-testid="pastor-message-title"
+                    style={{ fontFamily: "Dancing Script" }}
                   >
                     A Message from {leadPastor?.name || "Our Pastor"}
                   </h2>
@@ -300,12 +307,14 @@ export default function Home() {
               <h2
                 className="text-4xl font-bold text-foreground mb-4"
                 data-testid="watch-listen-title"
+                style={{ fontFamily: "Dancing Script" }}
               >
                 Watch & Listen
               </h2>
               <p
                 className="text-xl text-muted-foreground"
                 data-testid="watch-listen-description"
+                style={{ fontFamily: "Dancing Script" }}
               >
                 Experience our worship services live or catch up on past
                 messages
@@ -344,6 +353,7 @@ export default function Home() {
                 <h3
                   className="text-2xl font-semibold text-foreground mb-6"
                   data-testid="recent-messages-title"
+                  style={{ fontFamily: "Dancing Script" }}
                 >
                   Recent Messages
                 </h3>

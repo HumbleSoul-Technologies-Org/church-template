@@ -13,9 +13,9 @@ import { useEffect, useState } from "react";
 import { useAppData } from "../hooks/use-AppData";
 import axios from "axios";
 import { Configs } from "../lib/utils";
-import { Splide, SplideSlide } from '@splidejs/react-splide';
-import '@splidejs/react-splide/css';
-import '../styles/splide-custom.css';
+import { Splide, SplideSlide } from "@splidejs/react-splide";
+import "@splidejs/react-splide/css";
+import "../styles/splide-custom.css";
 
 // Define types locally
 export type Pastor = {
@@ -53,9 +53,7 @@ export default function About() {
       if (res.status === 200) {
         setGalleryImages(res.data.gallery || []);
       }
-    } catch (error) {
-     
-    }
+    } catch (error) {}
   };
 
   const fetchPastors = async () => {
@@ -83,7 +81,11 @@ export default function About() {
       {/* Hero Section */}
       <section className="relative py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl text-center">
-          <h1 className="text-5xl font-bold mb-6" data-testid="about-title">
+          <h1
+            style={{ fontFamily: "Dancing Script" }}
+            className="text-5xl font-bold mb-6"
+            data-testid="about-title"
+          >
             About FaithLife Church
           </h1>
           <p className="text-xl max-w-3xl mx-auto" data-testid="about-subtitle">
@@ -99,6 +101,7 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2
+                style={{ fontFamily: "Dancing Script" }}
                 className="text-4xl font-bold text-foreground mb-6"
                 data-testid="history-title"
               >
@@ -106,7 +109,7 @@ export default function About() {
               </h2>
               <div className="space-y-6 text-muted-foreground">
                 <p data-testid="history-paragraph-1">
-                  FaithLife Church was founded in 1995 with a simple vision: to
+                  FaithLife Church was founded in 2015 with a simple vision: to
                   create a place where people from all walks of life could come
                   together to experience God's love and grow in their faith
                   journey. What started as a small gathering of 20 people in a
@@ -161,6 +164,7 @@ export default function About() {
             <h2
               className="text-4xl font-bold text-foreground mb-4"
               data-testid="values-title"
+              style={{ fontFamily: "Dancing Script" }}
             >
               Our Core Values
             </h2>
@@ -322,7 +326,7 @@ export default function About() {
                   </Card>
                 ))
               ) : pastors && pastors.length > 0 ? (
-                pastors.slice(0,4).map((pastor) => (
+                pastors.slice(0, 4).map((pastor) => (
                   <Card
                     key={pastor._id}
                     className="text-center"
@@ -389,13 +393,17 @@ export default function About() {
               <h2
                 className="text-4xl font-bold text-foreground mb-8"
                 data-testid="service-times-section-title"
+                style={{ fontFamily: "Dancing Script" }}
               >
                 Service Times & Location
               </h2>
 
               <Card className="mb-8">
                 <CardContent className="p-6">
-                  <h3 className="text-2xl font-semibold text-card-foreground mb-6 flex items-center">
+                  <h3
+                    style={{ fontFamily: "Dancing Script" }}
+                    className="text-2xl font-semibold text-card-foreground mb-6 flex items-center"
+                  >
                     <Clock className="mr-3 h-6 w-6 text-primary" />
                     Sunday Services
                   </h3>
@@ -427,7 +435,10 @@ export default function About() {
 
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-2xl font-semibold text-card-foreground mb-6 flex items-center">
+                  <h3
+                    style={{ fontFamily: "Dancing Script" }}
+                    className="text-2xl font-semibold text-card-foreground mb-6 flex items-center"
+                  >
                     <MapPin className="mr-3 h-6 w-6 text-primary" />
                     Our Location
                   </h3>
@@ -465,95 +476,104 @@ export default function About() {
       </section>
 
       {/* Photo Gallery */}
-     
-{/* Photo Gallery */}
-{galleryImages.length > 0 && (
-  <section className="py-16 bg-card">
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
-      <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold text-foreground mb-4" data-testid="gallery-title">
-          Our Gallery
-        </h2>
-        <p className="text-xl text-muted-foreground" data-testid="gallery-description">
-          Glimpses of our community in worship, fellowship, and service
-        </p>
-      </div>
 
-      {galleryLoading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="w-full">
-              <Skeleton className="aspect-square rounded-lg" />
-            </div>
-          ))}
-        </div>
-      ) : galleryImages && galleryImages.length > 0 ? (
-        <Splide
-          options={{
-            type: 'loop',
-            perPage: 3,          // default for large screens (>= ~1024px)
-            perMove: 1,
-            gap: '1rem',
-            arrows: false,
-            pagination: true,
-            drag: true,
-            autoplay: true,
-            interval: 3000,
-            speed: 600,
-            pauseOnHover: true,
-            pauseOnFocus: true,
-            width: '100%',
-            breakpoints: {
-              // <= 1024px -> show 2 slides per page (optional intermediate)
-              1024: {
-                perPage: 2
-              },
-              // <= 640px -> show 1 slide per page (mobile)
-              640: {
-                perPage: 1
-              }
-            }
-          }}
-          className="splide-custom"
-        >
-          {galleryImages.map((image) => (
-            <SplideSlide
-              
-              key={image._id}>
-              <div
-                className="relative group overflow-hidden rounded-lg aspect-square"
-                data-testid={`gallery-image-${image._id}`}
+      {/* Photo Gallery */}
+      {galleryImages.length > 0 && (
+        <section className="py-16 bg-card">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            <div className="text-center mb-12">
+              <h2
+                className="text-4xl font-bold text-foreground mb-4"
+                data-testid="gallery-title"
               >
-                <img
-                  src={
-                    image?.image?.url ||
-                    image?.imageUrl ||
-                    "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
-                  }
-                  alt={image.title || "Gallery image"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white font-medium" data-testid={`gallery-title-${image._id}`}>
-                    {image.title}
-                  </p>
-                </div>
-              </div>
-            </SplideSlide>
-          ))}
-        </Splide>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg" data-testid="no-gallery">
-            Gallery images coming soon!
-          </p>
-        </div>
-      )}
-    </div>
-  </section>
-)}
+                Our Gallery
+              </h2>
+              <p
+                className="text-xl text-muted-foreground"
+                data-testid="gallery-description"
+              >
+                Glimpses of our community in worship, fellowship, and service
+              </p>
+            </div>
 
+            {galleryLoading ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="w-full">
+                    <Skeleton className="aspect-square rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            ) : galleryImages && galleryImages.length > 0 ? (
+              <Splide
+                options={{
+                  type: "loop",
+                  perPage: 3, // default for large screens (>= ~1024px)
+                  perMove: 1,
+                  gap: "1rem",
+                  arrows: false,
+                  pagination: true,
+                  drag: true,
+                  autoplay: true,
+                  interval: 3000,
+                  speed: 600,
+                  pauseOnHover: true,
+                  pauseOnFocus: true,
+                  width: "100%",
+                  breakpoints: {
+                    // <= 1024px -> show 2 slides per page (optional intermediate)
+                    1024: {
+                      perPage: 2,
+                    },
+                    // <= 640px -> show 1 slide per page (mobile)
+                    640: {
+                      perPage: 1,
+                    },
+                  },
+                }}
+                className="splide-custom"
+              >
+                {galleryImages.map((image) => (
+                  <SplideSlide key={image._id}>
+                    <div
+                      className="relative group overflow-hidden rounded-lg aspect-square"
+                      data-testid={`gallery-image-${image._id}`}
+                    >
+                      <img
+                        src={
+                          image?.image?.url ||
+                          image?.imageUrl ||
+                          "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
+                        }
+                        alt={image.title || "Gallery image"}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-300" />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                        <p
+                          className="text-white font-medium"
+                          data-testid={`gallery-title-${image._id}`}
+                        >
+                          {image.title}
+                        </p>
+                      </div>
+                    </div>
+                  </SplideSlide>
+                ))}
+              </Splide>
+            ) : (
+              <div className="text-center py-12">
+                <p
+                  className="text-muted-foreground text-lg"
+                  data-testid="no-gallery"
+                >
+                  Gallery images coming soon!
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
