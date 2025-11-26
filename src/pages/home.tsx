@@ -167,7 +167,6 @@ export default function Home() {
               <p
                 className="text-xl text-muted-foreground"
                 data-testid="upcoming-events-description"
-                style={{ fontFamily: "Dancing Script" }}
               >
                 Join us for fellowship, growth, and community
               </p>
@@ -314,7 +313,6 @@ export default function Home() {
               <p
                 className="text-xl text-muted-foreground"
                 data-testid="watch-listen-description"
-                style={{ fontFamily: "Dancing Script" }}
               >
                 Experience our worship services live or catch up on past
                 messages
